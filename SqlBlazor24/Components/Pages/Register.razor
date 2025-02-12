@@ -1,0 +1,101 @@
+﻿@page "/register"
+@using Microsoft.EntityFrameworkCore
+@using SqlBlazor24.Data
+@using SqlBlazor24.Models
+@rendermode InteractiveServer
+@inject EmployeeService employeeService
+@inject EmployeeDbContext dbContext
+
+<h3>Register new employee</h3>
+
+
+<EditForm Model="employee" OnValidSubmit="HandleValidSubmit">
+    <div>
+                <label>First Name: </label>
+        <InputText @bind-Value="employee.FirstName"/>
+    </div>
+
+    <div> 
+            <lable>Last Name: </lable>
+            <InputText @bind-Value="employee.LastName"/>
+    </div>
+
+    <div> 
+         <lable>Email: </lable>
+         <InputText @bind-Value="employee.Email" /> 
+    </div>
+
+    <div>
+        <label>Position: </label>
+        <InputText @bind-Value="employee.Position"/>
+    </div>
+    <button type="submit">Register</button>
+</EditForm>
+
+@if (sucessMessage != null)
+{
+  <p> @sucessMessage </p>    
+}
+
+
+
+<div>  @* Kontroll om employees är null för att undvika krascher *@
+    @if(employees == null)
+    {
+        <p>No employees found</p>
+    }
+    else @*Om listan inte är null, skapa en tabell för att visa anställda. tr står för tablerow*@
+    {
+        <table class="table">
+            <thead>
+                <tr> 
+                    <th>Firstname: </th>
+                    <th>Lastname: </th>
+                    <th>Email: </th>
+                    <th>Position: </th>
+                </tr>
+            </thead>
+
+
+            <tbody> @*Tabellen fylls med data från listan av anställda td står för table data *@
+                @foreach (var person in employees)
+                {
+                    <tr>
+                         <td>@person.FirstName</td>
+                         <td>@person.LastName</td>
+                         <td>@person.Position</td>
+                         <td>@person.Email</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+@code {
+    private Employee employee = new Employee(); /* @*Skapar ett tomt Employee-objekt*@ */
+
+    private string sucessMessage;
+
+
+    // @*Lista för att spara alla anställda*@
+    private List<Employee> employees =  new List<Employee>();
+
+
+    @*Metod som körs när komponenten laddas*@
+    protected override async Task OnInitializedAsync()
+
+    { /* @*Hämta alla anställda från databasen och spara i listan*@ */
+        employees = await dbContext.Employees.ToListAsync(); /* @*synca med listan*@ */
+        // Anropa tjänsten som hanterar anställda (t.ex. API-anrop)
+        await employeeService.GetEmployees(); //vänta på att appen ska köras för att visa datan 
+    }
+    // Metod som hanterar formulärsubmissions (lägga till en ny anställd)
+    private async Task HandleValidSubmit()
+    {
+        await employeeService.AddEmployee(employee); // Lägg till ny anställd via tjänsten
+        sucessMessage = "Employee added successfully"; // Sätt meddelande vid lyckad registrering
+        employee = new Employee(); // Återställ formuläret efter inskick
+    }
+}
+
